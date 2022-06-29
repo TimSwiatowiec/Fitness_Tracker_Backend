@@ -6,14 +6,71 @@ const routineActivitiesRouter = express.Router();
 // DELETE /api/routine_activities/:routineActivityId
 
 const { 
-    createPost,
-    getAllPosts,
-    updatePost,
-    getPostById,
+    // createPost,
+    // getAllPosts,
+    updateRoutineActivity,
+    getRoutineActivityById,
   } = require('../db');
 
-routineActivitiesRouter.patch('/:postId', requireUser, async (req, res, next) => {
-    const { postId } = req.params;
+//   routineActivitiesRouter.get('/', async (req, res, next) => {
+//     try {
+//       const allPosts = await getAllPosts();
+  
+//       const posts = allPosts.filter(post => {
+//         // the post is active, doesn't matter who it belongs to
+//         if (post.active) {
+//           return true;
+//         }
+      
+//         // the post is not active, but it belogs to the current user
+//         if (req.user && post.author.id === req.user.id) {
+//           return true;
+//         }
+      
+//         // none of the above are true
+//         return false;
+//       });
+    
+//       res.send({
+//         posts
+//       });
+//     } catch ({ name, message }) {
+//       next({ name, message });
+//     }
+//   });
+  
+//   routineActivitiesRouter.post('/', requireUser, async (req, res, next) => {
+//     const { title, content, tags = "" } = req.body;
+  
+//     const tagArr = tags.trim().split(/\s+/)
+//     const postData = {};
+  
+//     if (tagArr.length) {
+//       postData.tags = tagArr;
+//     }
+  
+//     try {
+//       postData.authorId = req.user.id;
+//       postData.title = title;
+//       postData.content = content;
+  
+//       const post = await createPost(postData);
+  
+//       if (post) {
+//         res.send(post);
+//       } else {
+//         next({
+//           name: 'PostCreationError',
+//           message: 'There was an error creating your post. Please try again.'
+//         })
+//       }
+//     } catch ({ name, message }) {
+//       next({ name, message });
+//     }
+//   });
+
+routineActivitiesRouter.patch('/:routineActivityId', requireUser, async (req, res, next) => {
+    const { routineActivityId } = req.params;
     const { title, content, tags } = req.body;
   
     const updateFields = {};
@@ -31,11 +88,11 @@ routineActivitiesRouter.patch('/:postId', requireUser, async (req, res, next) =>
     }
   
     try {
-      const originalPost = await getPostById(postId);
+      const originalRoutineActivity = await getRoutineActivityById(routineActivityId);
   
-      if (originalPost.author.id === req.user.id) {
-        const updatedPost = await updatePost(postId, updateFields);
-        res.send({ post: updatedPost })
+      if (originalRoutineActivity.author.id === req.user.id) {
+        const updatedRoutineActivity = await updateRoutineActivity(routineActivityId, updateFields);
+        res.send({ routineActivity: updatedRoutineActivity })
       } else {
         next({
           name: 'UnauthorizedUserError',
@@ -47,17 +104,17 @@ routineActivitiesRouter.patch('/:postId', requireUser, async (req, res, next) =>
     }
   });
   
-  routineActivitiesRouter.delete('/:postId', requireUser, async (req, res, next) => {
+  routineActivitiesRouter.delete('/:routineActivityId', requireUser, async (req, res, next) => {
     try {
-      const post = await getPostById(req.params.postId);
+      const routineActivity = await getRoutineActivityById(req.params.routineActivityId);
   
-      if (post && post.author.id === req.user.id) {
-        const updatedPost = await updatePost(post.id, { active: false });
+      if (routineActivity && routineActivity.author.id === req.user.id) {
+        const updatedRoutineActivity = await updateRoutineActivity(routineActivity.id, { active: false });
   
-        res.send({ post: updatedPost });
+        res.send({ routineActivity: updatedRoutineActivity });
       } else {
         // if there was a post, throw UnauthorizedUserError, otherwise throw PostNotFoundError
-        next(post ? { 
+        next(routineActivity ? { 
           name: "UnauthorizedUserError",
           message: "You cannot delete a post which is not yours"
         } : {
@@ -70,5 +127,6 @@ routineActivitiesRouter.patch('/:postId', requireUser, async (req, res, next) =>
       next({ name, message })
     }
   });
+  
   
   module.exports = routineActivitiesRouter;

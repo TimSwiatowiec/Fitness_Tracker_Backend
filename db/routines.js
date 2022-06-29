@@ -25,13 +25,24 @@ async function getRoutineById(id){
 }
 
 async function getRoutinesWithoutActivities(){
+    try {
+        const { rows } = await client.query(`
+          SELECT *
+          FROM routines;
+        `);
+    
+    
+        return rows;
+      } catch (error) {
+        throw error;
+      }
 }
 
 async function getAllRoutines() {
     try {
         const { rows } = await client.query(`
           SELECT *
-          FROM routine;
+          FROM routines;
         `);
     
     
@@ -145,7 +156,7 @@ async function updateRoutine({id, ...fields}) {
 }
 
 async function destroyRoutine(id) {
-    
+
 }
 
 module.exports = {

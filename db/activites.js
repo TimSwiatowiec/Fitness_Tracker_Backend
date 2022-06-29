@@ -1,4 +1,5 @@
-const client = require("./client")
+const client = require("./client");
+const { getRoutinesWithoutActivities } = require("./routines");
 
 // database functions
 async function getAllActivities() {
@@ -49,17 +50,36 @@ async function getActivityByName(name) {
 
 async function attachActivitiesToRoutines(routines) {
     try {
-        const createActivityPromises = tagList.map(
-          tag => createActivity(routines)
-        );
+        const {rows} = await client.query(`
+        SELECT *
+        FROM activities
+        JOIN "routine_activities" ON routine_activities."activityId"=activities.id
+        `);
     
-        await Promise.all(createActivityPromises);
-    
-        return await getActivityById(routines);
+        let allRoutines = [];
+        for(let i = 0; i < routines.length; i++){
+            let currentRoutine = routines[i];
+            currentRoutine.activities = rows.filter((act)=> act.routineId === currentRoutine.id)
+        }
+        console.log("all my routines:", allRoutines)
+        return rows
       } catch (error) {
         throw error;
       }
     }
+
+async function getAllRoutines() {
+    try{
+        const routines = await getRoutinesWithoutActivities();
+        console.log(attachActivitiesToRoutines);
+        const attachedActivities = await attachActivitiesToRoutines(routines);
+        console.log("routines w/ activities:", attachedActivities)
+        console.log("routines:", routines)
+        return attachedActivities;
+    } catch (error) {
+      throw error;
+    }
+}
     
 
 
@@ -135,4 +155,5 @@ module.exports = {
   attachActivitiesToRoutines,
   createActivity,
   updateActivity,
+  getAllRoutines
 }
