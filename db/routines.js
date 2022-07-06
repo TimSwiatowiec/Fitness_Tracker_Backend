@@ -113,15 +113,24 @@ async function getAllPublicRoutines() {
 }
 
 async function getPublicRoutinesByActivity({id}) {
+    try {
+        const {rows: [routines]} = await client.query(`
+        SELECT *
+        FROM routines
+        WHERE routines."isPublic" = 'true'
+        `)
+    } catch (error) {
+        throw error;
+    }
 
 }
 
 async function createRoutine({creatorId, isPublic, name, goal}) {
     try {
         const {rows: [routine]} = await client.query(`
-        INSERT INTO users ("creatorID", "isPublic", name, goal)
+        INSERT INTO routines ("creatorId", "isPublic", name, goal)
         VALUES($1, $2, $3, $4)
-        ON CONFLICT ("creatorId") DO NOTHING
+        ON CONFLICT ("name") DO NOTHING
         RETURNING *;
         `, [creatorId, isPublic, name, goal])
     
@@ -142,21 +151,29 @@ async function updateRoutine({id, ...fields}) {
   }
 
   try {
-    const { rows: [ user ] } = await client.query(`
+    const { rows: [ routine ] } = await client.query(`
       UPDATE routines
       SET ${ setString }
       WHERE id=${ id }
       RETURNING *;
     `, Object.values(fields));
 
-    return user;
+    return routine;
   } catch (error) {
     throw error;
   }
 }
 
 async function destroyRoutine(id) {
-
+  try {
+    const { rows: [routine] } = await client.query(`
+    DELETE 
+    FROM routines
+    WHERE id${routine.id}
+    `)
+  } catch (error) {
+    throw error;
+  }
 }
 
 module.exports = {

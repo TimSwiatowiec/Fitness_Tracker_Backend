@@ -8,7 +8,7 @@ async function getAllActivities() {
    SELECT *
    FROM activities
    `); 
-   return { rows }
+   return rows
  } catch (error) {
    throw error; 
  }
@@ -50,19 +50,26 @@ async function getActivityByName(name) {
 
 async function attachActivitiesToRoutines(routines) {
     try {
+
+        // activitieroutine_activities
+        //id --> activitt.id    
+        //name            
+        // activityId
+        // alias routineActivityId, routineId, 
+        //table.column for name, activityId, etc. AS on the column
         const {rows} = await client.query(`
-        SELECT *
+        SELECT routine_activities.id AS routineActivityId, activity.id AS activityId, routine 
         FROM activities
         JOIN "routine_activities" ON routine_activities."activityId"=activities.id
         `);
     
-        let allRoutines = [];
+        
         for(let i = 0; i < routines.length; i++){
             let currentRoutine = routines[i];
             currentRoutine.activities = rows.filter((act)=> act.routineId === currentRoutine.id)
         }
-        console.log("all my routines:", allRoutines)
-        return rows
+        console.log("all my routines:", routines)
+        return routines
       } catch (error) {
         throw error;
       }
@@ -86,11 +93,13 @@ async function getAllRoutines() {
 // select and return an array of all activities
 async function createActivity({ name, description }) {
     try {
-        await client.query(`
+        const {rows: [activityToCreate]} = await client.query(`
           INSERT INTO activities("name", "description")
           VALUES ($1, $2)
-          ON CONFLICT ("name", "description") DO NOTHING;
+          ON CONFLICT ("name") DO NOTHING
+          RETURNING *;
         `, [ name, description ]);
+        return activityToCreate;
       } catch (error) {
         throw error;
       }
