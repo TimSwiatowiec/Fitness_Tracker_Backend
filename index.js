@@ -1,29 +1,15 @@
-
-
-// Import express, and create a server
+const PORT = process.env.PORT || 3000;
 const express = require('express');
 const server = express();
+const client = require('./db/database');
+client.connect();
+
+server.listen(PORT, () => {
 
 
-// Have the server use bodyParser.json()
+const bodyParser = require('body-parser');
 server.use(bodyParser.json());
+server.use(bodyParser.urlencoded({extended: true}));
 
-
-// Have the server use your api router with prefix '/api'
-server.use('/api', require('./api'));
-
-// Import the client from your db/index.js
-const { client } = require('./db');
-
-// Create custom 404 handler that sets the status code to 404.
-server.use('*', (req, res, next) => {
-  res.status(404);
-  res.send({ error: 'route not found' })
-});
-
-// Create custom error handling that sets the status code to 500
-// and returns the error as an object
-server.use((error, req, res, next) => {
-  res.status(500);
-  res.send({ error: error.message });
-})
+const morgan = require('morgan');
+server.use(morgan('dev'))});

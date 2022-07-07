@@ -1,5 +1,5 @@
 const client = require("./client");
-const { getRoutinesWithoutActivities } = require("./routines");
+
 
 // database functions
 async function getAllActivities() {
@@ -17,13 +17,13 @@ async function getAllActivities() {
 async function getActivityById(id) {
   try{
         
-    const { rows: activity } = await client.query(`
+    const {rows} = await client.query(`
         SELECT *
         FROM activities
         WHERE id=${id};
     `);
     
-    return activity;
+    return rows;
     
 }
 catch(err) {
@@ -33,21 +33,14 @@ catch(err) {
 }
 
 async function getActivityByName(name) {
-    try {
-        const { rows: [ user ] } = await client.query(`
-          SELECT *
-          FROM activities
-          WHERE activities=$1
-        `, [ name ]);
+  try {
+    const { rows } = await client.query(`
+        SELECT *
+        FROM activities
+        WHERE name=$1
+    `, [ name ]);
     
-        if (!user) {
-          throw {
-            name: "ActivityNotFoundError",
-            message: "A Activity with that username does not exist"
-          }
-        }
-    
-        return user;
+        return rows;
       } catch (error) {
         throw error;
       }
@@ -63,7 +56,7 @@ async function attachActivitiesToRoutines(routines) {
         // alias routineActivityId, routineId, 
         //table.column for name, activityId, etc. AS on the column
         const {rows} = await client.query(`
-        SELECT routine_activities.id AS routineActivityId, activity.id AS activityId, routine 
+        SELECT routine_activities.id AS routineActivityId, routine_activities.count, routine_activities.duration, routine_activities."activityId", routine_activities."routineId", activities.* 
         FROM activities
         JOIN "routine_activities" ON routine_activities."activityId"=activities.id
         `);
@@ -86,13 +79,13 @@ async function attachActivitiesToRoutines(routines) {
 // select and return an array of all activities
 async function createActivity({ name, description }) {
     try {
-        const {rows: [activityToCreate]} = await client.query(`
-          INSERT INTO activities("name", "description")
+        const {rows: activity} = await client.query(`
+          INSERT INTO activities(name, description)
           VALUES ($1, $2)
-          ON CONFLICT ("name") DO NOTHING
+          ON CONFLICT (name) DO NOTHING
           RETURNING *;
         `, [ name, description ]);
-        return activityToCreate;
+        return activity;
       } catch (error) {
         throw error;
       }
@@ -101,32 +94,27 @@ async function createActivity({ name, description }) {
 
 // return the new activity
 async function updateActivity({ id, ...fields }) {
-  try{
+  const setString = Object.keys(fields).map(
+    (key, index) => `"${key}"=$${ index + 1 }`
+).join(', ');
 
-    //Format setString into a string format that can be passed into PSQL ('"field1"=$1, "field2"=$1', etc.)
-    const setString = Object.keys(fields).map( (key, index) => `"${ key }"=$${ index + 1 }`).join(', ');
-    
-    //If activity id is missing or no update fields are povided, return early
-    if(!id || setString.length === 0){
-        throw new Error('Missing field. Please provide userId and a field to update.');
-        return;
-    }
+if (setString.length === 0) {
+    return;
+};
 
-    const { rows: [activityObj] } = await client.query(`
+try {
+    const { rows } = await client.query(`
         UPDATE activities
-        SET ${setString}
-        WHERE id=${id}
+        SET ${ setString }
+        WHERE id=${ id }
         RETURNING *;
     `, Object.values(fields));
 
-    return activityObj;
+    return rows;
+} catch (error) {
+    throw error;
+}};
 
-}
-catch(err) {
-    console.error('Error updating activity. Error: ', err);
-    throw err;
-}
-}
 
 // don't try to update the id
 // do update the name and description

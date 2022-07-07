@@ -1,5 +1,12 @@
 const express = require('express');
 const usersRouter = express.Router();
+// const usersRouter = require('express').Router();
+// const { getAllUsers, getUserByUsername, createUser } = require('../db');
+// const { getAllUsers, getUserByUsername, createUser, getAllPublicRoutinesByUser } = require('../db');
+// const { requireUser, requireActiveUser } = require('./utils');
+// const jwt = require('jsonwebtoken');
+// const bcrypt = require('bcrypt');
+
 
 // POST /api/users/login
 
@@ -19,90 +26,96 @@ const {
   const jwt = require('jsonwebtoken');
   
   usersRouter.get('/', async (req, res, next) => {
+    const { username } = req.params;
+    console.log(username);
+  
     try {
-      const users = await getUsers();
-    
-      res.send({
-        users
-      });
+      const userPublicRoutines = await getAllPublicRoutinesByUser(username);
+      res.send(userPublicRoutines);
     } catch ({ name, message }) {
       next({ name, message });
-    }
+    };
   });
   
   usersRouter.post('/login', async (req, res, next) => {
     const { username, password } = req.body;
-  
-    // request must have both
-    if (!username || !password) {
-      next({
-        name: "MissingCredentialsError",
-        message: "Please supply both a username and password"
-      });
-    }
-  
-    try {
-      const user = await getUserByUsername(username);
-  
-      if (user && user.password == password) {
-        const token = jwt.sign({ 
-          id: user.id, 
-          username
-        }, process.env.JWT_SECRET, {
-          expiresIn: '1w'
-        });
-  
-        res.send({ 
-          message: "you're logged in!",
-          token 
-        });
-      } else {
-        next({ 
-          name: 'IncorrectCredentialsError', 
-          message: 'Username or password is incorrect'
-        });
-      }
-    } catch(error) {
-      console.log(error);
-      next(error);
-    }
-  });
+
+  if (!username || !password) {
+    next({
+      name: "MissingCredentialsError",
+      message: "Please supply both a username and password"
+    });
+  };
+
+  try {
+    const user = await getUserByUsername(username);
+    const hashedPassword = user.password;
+
+    console.log(hashedPassword)
+    console.log(password)
+
+
+    bcrypt.compare(password, hashedPassword, function (err, passwordsMatch) {
+      if (passwordsMatch) {
+        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET)
+        res.send({ message: "you're logged in!", token: `${token}` });
+
+        return token;
+      } else throw new Error({name: 'IncorrectCredentialsError',
+            message: 'Username or password is incorrect'});
+});
+} catch (error) {
+console.log(error);
+next(error);
+}
+});
+
   
   usersRouter.post('/register', async (req, res, next) => {
     const { username, password, name, location } = req.body;
-  
-    try {
-      const _user = await getUserByUsername(username);
-    
-      if (_user) {
-        next({
-          name: 'UserExistsError',
-          message: 'A user by that username already exists'
-        });
-      }
-  
+  const SALT_COUNT = 10;
+
+  try {
+    const _user = await getUserByUsername(username);
+
+    if (_user) {
+      next({
+        name: 'UserExistsError',
+        message: 'A user by that username already exists'
+      });
+    };
+
+    if (password.length < 8) {
+      next({
+        name: 'PasswordTooShort',
+        message: 'Password must be at least 8 characters'
+      })
+    };
+
+    bcrypt.hash(password, SALT_COUNT, async function (err, hashedPassword) {
       const user = await createUser({
         username,
-        password,
+        password: hashedPassword,
         name,
         location,
       });
-  
-      const token = jwt.sign({ 
-        id: user.id, 
+
+      const token = jwt.sign({
+        id: user.id,
         username
       }, process.env.JWT_SECRET, {
         expiresIn: '1w'
       });
-  
-      res.send({ 
+
+      res.send({
         message: "thank you for signing up",
-        token 
+        token
       });
-    } catch ({ name, message }) {
-      next({ name, message });
-    } 
-  });
+    });
+  } catch ({ name, message }) {
+    next({ name, message })
+  }
+});
 
   //get userById still needs to be done.
   
