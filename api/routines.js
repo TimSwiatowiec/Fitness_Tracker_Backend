@@ -12,18 +12,10 @@ const routinesRouter = express.Router();
 //     console.log(result);
 //   })
 //   .catch(console.error);
-routinesRouter.get('/', async (req, res, next) => {
-    try {
-      const allRoutines = await getAllRoutines();
-  
-      res.send({
-        routines
-    });
-      
-    } catch ({ name, message }) {
-      next({ name, message });
-    }
-  });
+routinesRouter.get('/', async (req, res) => {
+    const routines = await getAllRoutines();
+    res.send({ routines });
+});
 
 // POST /api/routines
 // fetch('http://fitnesstrac-kr.herokuapp.com/api/routines', {
@@ -39,17 +31,23 @@ routinesRouter.get('/', async (req, res, next) => {
 //   })
 //   .catch(console.error);
 routinesRouter.post('/', requireUser, async (req, res, next) => {
- 
-  
-    try {
-  
-      const makeRoutines = await createRoutines();
-  
-     
-    } catch (error) {
-      throw error;
-    }
-  });
+        try {
+            const { public, name, goal } = req.body;
+            const routineData = { creatorId: req.user.id, public, name, goal };
+            const routine = await createRoutine(routineData);
+    
+            if (routine) {
+                res.send({ routine });
+            } else {
+                next({
+                    name: "CreateRoutineError",
+                    message: "Must be logged in to create routine"
+                })
+            }
+        } catch ({ name, message }) {
+            next({ name, message });
+        };
+    });
 
 // PATCH /api/routines/:routineId
 // fetch('http://fitnesstrac-kr.herokuapp.com/api/routines/6', {
@@ -64,13 +62,39 @@ routinesRouter.post('/', requireUser, async (req, res, next) => {
 //   })
 //   .catch(console.error);
 routinesRouter.patch('/:routineId', async(res, req, next) => {
-    try {
-        const updatingRoutine = await destroyRoutine();
+    const { routineId } = req.params;
+    const { public, name, goal } = req.body;
 
-    } catch (error) {
-        throw error;
-    }
-})
+    const updateFields = {};
+
+    if (name) {
+        updateFields.name = name;
+    };
+
+    if (goal) {
+        updateFields.goal = goal;
+    };
+
+    if (public) {
+        updateFields.public = public;
+    };
+
+    try {
+        const originalRoutine = await getRoutineById(routineId);
+        console.log("Original Routine: ", originalRoutine);
+        console.log("creatorId", originalRoutine.creatorId)
+
+        if(originalRoutine.creatorId === req.user.id) {
+            const updatedRoutine = await updateRoutine(routineId, updateFields);
+            res.send({ routine: updatedRoutine });
+        } else {
+            next({ message: "You cannot update a routine you did not create!"});
+        };
+    } catch ({ name, message }) {
+        next({ name, message });
+    };
+});
+
 
 // DELETE /api/routines/:routineId
 // fetch('http://fitnesstrac-kr.herokuapp.com/api/routines/6', {
@@ -85,28 +109,22 @@ routinesRouter.patch('/:routineId', async(res, req, next) => {
 //   })
 //   .catch(console.error);
 routinesRouter.delete('/:routineId', requireUser, async (req, res, next) => {
+    const { routineId } = req.params;
+
     try {
-      const routine = await getRouterById(req.params.postId);
-  
-      if (routine && routine.author.id === req.user.id) {
-        const upRoutine = await updateRoutine(routine.id, { active: false });
-  
-        res.send({ routine: updatedRoutine });
-      } else {
-        // if there was a post, throw UnauthorizedUserError, otherwise throw PostNotFoundError
-        next(routine ? { 
-          name: "UnauthorizedUserError",
-          message: "You cannot delete a routine which is not yours"
-        } : {
-          name: "RoutineNotFoundError",
-          message: "That post does not exist"
-        });
-      }
-  
+        const routine = await getRoutineById(routineId);
+
+        if (routine.creatorId === req.user.id) {
+            await deleteRoutine(routineId);
+            console.log('routine has been deleted!');
+            res.send('routine has been deleted!')
+        } else {
+            next({ message: "You must be the owner of the routine to delete it!"})
+        };
     } catch ({ name, message }) {
-      next({ name, message })
-    }
-  });
+        next({ name, message });
+    };
+});
 
 
 // POST /api/routines/:routineId/activities
@@ -123,24 +141,22 @@ routinesRouter.delete('/:routineId', requireUser, async (req, res, next) => {
 //   })
 //   .catch(console.error);
 routinesRouter.post('/', requireUser, async (req, res, next) => {
+    const { routineId } = req.params;
+    const { activityId, count, duration } = req.body;
+    const { creatorId } = await getRoutineById(routineId);
 
-  
+
     try {
-    
-      const routine = await createRoutine();
-  
-      if (routine) {
-        res.send(post);
-      } else {
-        next({
-          name: 'PostCreationError',
-          message: 'There was an error creating your post. Please try again.'
-        })
-      }
+        if (creatorId === req.user.id) {
+        const routineActivity = await addActivityToRoutine({routineId, activityId, count, duration});
+        res.send({ routineActivity });
+        } else {
+            next({ message: "You are not authorized to update routine!"})
+        };
     } catch ({ name, message }) {
-      next({ name, message });
-    }
-  });
+        next({ name, message });
+    };
+});
 
 
 module.exports = router;

@@ -2,6 +2,7 @@ const client = require('./client');
 // const { getUserByUsername, getUserById } = require('./users');
 // const { getActivitiesByRoutineId } = require('./activities');
 const { attachActivitiesToRoutines } =  require('./activities');
+const usersRouter = require('../api/users');
 
 async function getRoutineById(id){
     try {
@@ -105,18 +106,15 @@ async function getPublicRoutinesByUser({username}) {
 }
 
 async function getAllPublicRoutines() {
-  
     try {
         const { rows: routines } = await client.query(`
-            SELECT username AS "creatorName", routines.*
+            SELECT users.username AS "creatorName", routines.*
             FROM routines
-            JOIN users ON users.id=routines."creatorId", 
-            routine_activities ON routine_activities."routineId"=routines.id
-            WHERE routine_activities."activityId"=$1
-            AND public=true;
-        `);
+            JOIN users ON routines.'creatorId' = users.id
+            WHERE "creatorId" = $1
+            AND 'isPublic'=true;`);
 
-        const attachedActivities = await attachActivitiesToRoutines(routines);
+        // const attachedActivities = await attachActivitiesToRoutines(routines);
 
         return attachedActivities;
     } catch (error) {

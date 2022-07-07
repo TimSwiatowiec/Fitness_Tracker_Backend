@@ -19,7 +19,7 @@ const usersRouter = express.Router();
 const { 
     createUser,
     getUserById,
-    getUsers,
+    getUser,
     getUserByUsername,
   } = require('../db');
   
@@ -36,6 +36,19 @@ const {
       next({ name, message });
     };
   });
+//   usersRouter.get('/:username/routines', async (req, res, next) => {
+//     const {getUsers} = req.params;
+//     console.log(getUsers)
+
+//     try {
+//         const user = await getUser();
+//         const hashedPassword = user.password
+
+//         console.log(hashedPassword)
+//         console.log(password)
+ 
+//     }
+// })
   
   usersRouter.post('/login', async (req, res, next) => {
     const { username, password } = req.body;
@@ -108,6 +121,7 @@ next(error);
       });
 
       res.send({
+        user,
         message: "thank you for signing up",
         token
       });
