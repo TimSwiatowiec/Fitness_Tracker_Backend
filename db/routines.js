@@ -39,40 +39,51 @@ async function getRoutinesWithoutActivities(){
 }
 
 async function getAllRoutines() {
-    try {
-        const { rows } = await client.query(`
+    
+
+      try{
+        const { rows: routines } = await client.query(`
           SELECT *
           FROM routines;
         `);
     
-    
-        return rows;
-      } catch (error) {
-        throw error;
-      }
-    
+    //     const routines = await getRoutinesWithoutActivities();
+    //     console.log(attachActivitiesToRoutines);
+    //     const attachedActivities = await attachActivitiesToRoutines(routines);
+    //     console.log("routines w/ activities:", attachedActivities)
+    //     console.log("routines:", routines)
+        
+    //     return attachedActivities;
+    // } catch (error) {
+    //   throw error;
+    return routines;
+        
+}
+catch(err) {
+    console.error('Error getting public routines. Error: ', err);
+    throw err;
+}
 }
 
 
 async function getAllRoutinesByUser({username}) {
-    try {
-        const { rows: [ user ] } = await client.query(`
-          SELECT *
-          FROM routines
-          WHERE username=$1
-        `, [ username ]);
-    
-        if (!user) {
-          throw {
-            name: "UserNotFoundError",
-            message: "A user with that username does not exist"
-          }
-        }
-    
-        return user.routines;
-      } catch (error) {
-        throw error;
-      }
+    try{
+
+        const [{ id }] = await getUserByUsername(username);
+
+        const { rows: routines } = await client.query(`
+            SELECT *
+            FROM routines
+            WHERE "creatorId"=${id};
+        `)
+
+        return routines;
+        
+    }
+    catch(err) {
+        console.error('Error getting all routines by user. Error: ', err);
+        throw err;
+    }
     
 }
 

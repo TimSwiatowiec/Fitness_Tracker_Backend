@@ -1,17 +1,25 @@
 const client = require('./client')
 
 async function getRoutineActivityById(id){
-    try {
-        const { rows: [ routine_activity ] } = await client.query(`
-          SELECT id
-          FROM routine_activities
-          WHERE id=${ id }
+    try{
+        
+        const { rows: activityIdArr } = await client.query(`
+            SELECT "activityId"
+            FROM routine_activities
+            WHERE "routineId"=${id};
         `);
-    
-        return routine_activity;
-      } catch (error) {
-        throw error;
-      }
+ 
+        const activityPromiseArr = activityIdArr.map(async (idObj) => await getActivitiesById(idObj.activityId));
+
+        const activityArr = Promise.all(activityPromiseArr);
+        
+        return activityArr;
+
+    }
+    catch(err) {
+        console.error('Error getting activities from routine. Error: ', err);
+        throw err;
+    }
 }
 
 async function addActivityToRoutine({
@@ -88,7 +96,7 @@ async function updateRoutineActivity ({id, ...fields}) {
     `, [id]);
     
     // and create post_tags as necessary
-    await upadateRoutineActivity(routine_activtyId, routine_activityList);
+    await updateRoutineActivity(routine_activty.id, routine_activityList);
 
     return await routine_activity(id);
   } catch (error) {
@@ -102,7 +110,7 @@ async function destroyRoutineActivity(id) {
         const { rows } = await client.query(`
         DELETE 
         FROM routine_activities
-        WHERE id${id}
+        WHERE id=${id}
         `)
         return rows
       } catch (error) {

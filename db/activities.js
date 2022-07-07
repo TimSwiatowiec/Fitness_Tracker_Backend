@@ -15,16 +15,21 @@ async function getAllActivities() {
 }
 
 async function getActivityById(id) {
-  try {
-    const { rows: [ activity ] } = await client.query(`
-    SELECT id, username, description 
-    FROM activities
-    WHERE id${ id }
-    `)
-  
-  } catch (error) {
+  try{
+        
+    const { rows: activity } = await client.query(`
+        SELECT *
+        FROM activities
+        WHERE id=${id};
+    `);
     
-  }
+    return activity;
+    
+}
+catch(err) {
+    console.error('Error getting activities by id. Error: ', err);
+    throw err;
+}
 }
 
 async function getActivityByName(name) {
@@ -75,19 +80,7 @@ async function attachActivitiesToRoutines(routines) {
       }
     }
 
-async function getAllRoutines() {
-    try{
-        const routines = await getRoutinesWithoutActivities();
-        console.log(attachActivitiesToRoutines);
-        const attachedActivities = await attachActivitiesToRoutines(routines);
-        console.log("routines w/ activities:", attachedActivities)
-        console.log("routines:", routines)
-        return attachedActivities;
-    } catch (error) {
-      throw error;
-    }
-}
-    
+
 
 
 // select and return an array of all activities
@@ -108,50 +101,31 @@ async function createActivity({ name, description }) {
 
 // return the new activity
 async function updateActivity({ id, ...fields }) {
-     // read off the tags & remove that field 
-  const { activity } = fields; // might be undefined
-  delete fields.tags;
+  try{
 
-  // build the set string
-  const setString = Object.keys(fields).map(
-    (key, index) => `"${ key }"=$${ index + 1 }`
-  ).join(', ');
-
-  try {
-    // update any fields that need to be updated
-    if (setString.length > 0) {
-      await client.query(`
-        UPDATE activities
-        SET ${ setString }
-        WHERE id=${ id }
-        RETURNING *;
-      `, Object.values(fields));
-    }
-
-    // return early if there's no tags to update
-    if (activity === undefined) {
-      return await getActivityById(id);
-    }
-
-    // make any new tags that need to be made
-    const activityList = await createActivity(activity);
-    const tagListIdString = tagList.map(
-      activity => `${ id }`
-    ).join(', ');
-
-    // delete any post_tags from the database which aren't in that tagList
-    await client.query(`
-      DELETE FROM activities
-      WHERE "id"
-      NOT IN (${ tagListIdString })
-      AND "id"=$1;
-    `, [id]);
+    //Format setString into a string format that can be passed into PSQL ('"field1"=$1, "field2"=$1', etc.)
+    const setString = Object.keys(fields).map( (key, index) => `"${ key }"=$${ index + 1 }`).join(', ');
     
+    //If activity id is missing or no update fields are povided, return early
+    if(!id || setString.length === 0){
+        throw new Error('Missing field. Please provide userId and a field to update.');
+        return;
+    }
 
-    return await getActivityById(id);
-  } catch (error) {
-    throw error;
-  }
+    const { rows: [activityObj] } = await client.query(`
+        UPDATE activities
+        SET ${setString}
+        WHERE id=${id}
+        RETURNING *;
+    `, Object.values(fields));
+
+    return activityObj;
+
+}
+catch(err) {
+    console.error('Error updating activity. Error: ', err);
+    throw err;
+}
 }
 
 // don't try to update the id
@@ -163,6 +137,5 @@ module.exports = {
   getActivityByName,
   attachActivitiesToRoutines,
   createActivity,
-  updateActivity,
-  getAllRoutines
+  updateActivity
 }

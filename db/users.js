@@ -4,6 +4,15 @@ const client = require("./client");
 
 // user functions
 async function createUser({ username, password }) {
+// const SALT_COUNT = 10;
+
+
+// bcrypt.hash(password, SALT_COUNT, function(err, hashedPassword) {
+//   createUser({
+//     username,
+//     password: hashedPassword // not the plaintext
+//   });
+// });
   try {
     const { rows: [ user ] } = await client.query(`
     INSERT INTO users(username, password)
@@ -18,6 +27,17 @@ async function createUser({ username, password }) {
 }
 
 async function getUser({ username, password }) {
+
+// const user = await getUserByUserName(username);
+// const hashedPassword = user.password;
+
+// bcrypt.compare(password, hashedPassword, function(err, passwordsMatch) {
+//   if (passwordsMatch) {
+//     // return the user object (without the password)
+//   } else {
+//     throw SomeError;
+//   }
+// });
   try {
     const { rows } = await client.query(`
     SELECT username, password 
@@ -50,23 +70,22 @@ async function getUserById(userId) {
 }
 
 async function getUserByUsername(userName) {
-  try {
-    const { rows: [ user ] } = await client.query(`
-    SELECT * 
-    FROM users
-    WHERE username=$1`,
-    [userName]);
-    
-    if(!user) {
-      throw {
-        name: "UserNotFoundError", 
-        message: "A a user with that username does not exist"
-      }
+    try{
+        
+        const { rows: user } = await client.query(`
+            SELECT *
+            FROM users
+            WHERE username='${userName}'
+        `);
+
+
+        return user;
+        
     }
-    return user;
-  } catch (error) {
-    throw error; 
-  }
+    catch(err) {
+        console.error('Error getting user. Error: ', err);
+        throw err;
+    }
 }
 
 module.exports = {
