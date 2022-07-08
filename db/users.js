@@ -22,6 +22,7 @@ async function createUser({ username, password }) {
     ON CONFLICT (username) DO NOTHING
     RETURNING *;
     `, [username, password])
+    if (user) delete user.password
     return user; 
   } catch (error) {
     throw error; 
@@ -40,16 +41,21 @@ async function getUser({ username, password }) {
 //     throw SomeError;
 //   }
 // });
-  try {
-    const { rows } = await client.query(`
-    SELECT username, password 
-    FROM users
-    `); 
-    return rows; 
-  } catch (error) {
+   const user = await getUserByUsername(username)
+    const _password = user[0].password
+    console.log(user[0].password, user[0])
+    if (_password===password){
+        try {
+            const {rows: [user]} = await client.query (
+                `SELECT id, username
+                 FROM users
+                 WHERE username=$1`, [username]
+            ) 
+    return user} 
+    catch (error) {
     throw error; 
   }
-}
+}}
 
 async function getUserById(userId) {
   try {

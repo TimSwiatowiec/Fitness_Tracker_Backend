@@ -17,18 +17,17 @@ async function getAllActivities() {
 async function getActivityById(id) {
   try{
         
-    const {rows} = await client.query(`
+    const {rows: [activity]} = await client.query(`
         SELECT *
         FROM activities
         WHERE id=${id};
     `);
     
-    return rows;
+    return activity;
     
 }
-catch(err) {
-    console.error('Error getting activities by id. Error: ', err);
-    throw err;
+catch (error) {
+  throw error;
 }
 }
 

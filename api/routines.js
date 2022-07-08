@@ -1,5 +1,5 @@
 const express = require('express');
-const { destroyRoutine } = require('../db/routines');
+// const { destroyRoutine } = require('../db/routines');
 const routinesRouter = express.Router();
 
 // GET /api/routines
