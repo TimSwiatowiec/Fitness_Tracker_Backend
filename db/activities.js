@@ -78,7 +78,7 @@ async function attachActivitiesToRoutines(routines) {
 // select and return an array of all activities
 async function createActivity({ name, description }) {
     try {
-        const {rows: activity} = await client.query(`
+        const {rows: [activity]} = await client.query(`
           INSERT INTO activities(name, description)
           VALUES ($1, $2)
           ON CONFLICT (name) DO NOTHING
@@ -109,7 +109,7 @@ try {
         RETURNING *;
     `, Object.values(fields));
 
-    return rows;
+    return rows[0];
 } catch (error) {
     throw error;
 }};
