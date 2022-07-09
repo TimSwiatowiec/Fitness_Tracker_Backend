@@ -50,19 +50,14 @@ async function getAllRoutines() {
 
 async function getAllRoutinesByUser({username}) {
   try {
-    const { rows: routines } = await client.query(`
-      SELECT routines.*, users.username AS "creatorName"
-      FROM routines
-      JOIN users ON users.id = routines."creatorId"
-      WHERE users.username = $1
-      `, [username]);
+        const allRoutines = await getAllRoutines();
+        const userRoutines = allRoutines.filter ((routine)=> {
+            if(username === routine.creatorName){
+                return true
+            }
+        })
 
-    const routinesWithActivities = await Promise.all(routines.map(async routine => {
-      routine.activities = await getActivitiesByRoutineId(routine.id);
-      return routine;
-    }))
-
-    return routinesWithActivities;
+    return userRoutines;
   } catch (error) {
     throw error;
   }
@@ -70,20 +65,10 @@ async function getAllRoutinesByUser({username}) {
 
 async function getPublicRoutinesByUser({username}) {
   try {
-    const user = await getUserByUsername(username)
-
-    const { rows: routines } = await client.query(`
-        SELECT routines.*, users.username AS "creatorName"
-        FROM routines
-        JOIN users ON users.id = routines."creatorId"
-        WHERE "isPublic" = true
-        `);
-
-    const routinesWithActivities = await Promise.all(routines.map(async routine => {
-      routine.activities = await getActivitiesByRoutineId(routine.id);
-      return routine;
-    }))
-    return routinesWithActivities;
+    const userRoutines = await getAllRoutinesByUser({username});
+    const publicRoutines = userRoutines.filter((routine) => {return routine.isPublic === true})
+    
+    return publicRoutines;
   } catch (error) {
     throw error;
   }
@@ -111,20 +96,21 @@ async function getAllPublicRoutines() {
 async function getPublicRoutinesByActivity({id}) {
     try {
         const { rows: routines } = await client.query(`
-            SELECT routines.*
+            SELECT routines.*, users.username AS "creatorName"
             FROM routines
+            JOIN users ON routines."creatorId" = users.id
             JOIN routine_activities ON routine_activities."routineId"=routines.id
-            WHERE routine_activities."activityId"=$1
-            AND isPublic=true;
+            WHERE routines."isPublic" = true
+            AND routine_activities."activityId" = $1;
         `, [ id ]);
-        for (let routine of routines) {
-            routine.activities = await getActivitiesByRoutineId(routine.id);
-        };
-        return routines;
+        // const routinesWithActivities = await Promise.all(routines.map(async routine => {
+        //     routine.activities = await getActivityByRoutineId(routine.id);
+    
+        return attachActivitiesToRoutines(routines);
     } catch (error) {
         throw error
     };
-};
+}
 
 
 async function createRoutine({creatorId, isPublic, name, goal}) {

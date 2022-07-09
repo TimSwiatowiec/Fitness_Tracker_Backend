@@ -4,8 +4,8 @@ const usersRouter = express.Router();
 // const { getAllUsers, getUserByUsername, createUser } = require('../db');
 // const { getAllUsers, getUserByUsername, createUser, getAllPublicRoutinesByUser } = require('../db');
 // const { requireUser, requireActiveUser } = require('./utils');
-// const jwt = require('jsonwebtoken');
-// const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 
 // POST /api/users/login
