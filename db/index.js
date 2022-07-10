@@ -1,3 +1,4 @@
+// const client = require('pg')
 // require and re-export all files in this db directory (users, activities...)
 // require all API files
 module.exports = {

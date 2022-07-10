@@ -48,8 +48,7 @@ async function getActivityByName(name) {
 async function attachActivitiesToRoutines(routines) {
     try {
 
-        // activitieroutine_activities
-        //id --> activitt.id    
+        
         //name            
         // activityId
         // alias routineActivityId, routineId, 
