@@ -7,6 +7,7 @@ const apiRouter = express.Router();
 const jwt = require('jsonwebtoken');
 const { getUserById } = require('../db');
 const { JWT_SECRET } = process.env;
+// const requireUser = require('./utils')
 
 // set `req.user` if possible
 apiRouter.use(async (req, res, next) => {
@@ -67,6 +68,12 @@ apiRouter.use('/routines', routinesRouter);
 
 // ROUTER: /api/routine_activities
 const routineActivitiesRouter = require('./routineActivities');
+// const requireUser  = require('./utils');
 apiRouter.use('/routine_activities', routineActivitiesRouter);
+
+apiRouter.get ('/health', (req, res) => {
+    res.send ({message: 'healthy as can be'})
+})
+
 
 module.exports = apiRouter;

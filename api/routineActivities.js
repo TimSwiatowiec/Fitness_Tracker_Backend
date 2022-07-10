@@ -1,11 +1,12 @@
 const express = require('express');
 const routineActivitiesRouter = express.Router();
+const {getRoutineActivityById, updateRoutineActivity, getRoutineActivityById, destroyRoutineActivity} = require('../db')
 
 // PATCH /api/routine_activities/:routineActivityId
 
 // DELETE /api/routine_activities/:routineActivityId
 
-routineActivitiesRouter.patch('/:routineActivityId', requireUser, async (req, res, next) => {
+routineActivitiesRouter.patch('/:routineActivityId', async (req, res, next) => {
   const { routineActivityId } = req.params;
   const { count, duration } = req.body;
 
@@ -40,9 +41,9 @@ routineActivitiesRouter.patch('/:routineActivityId', requireUser, async (req, re
   };
 });
 
-routineActivitiesRouter.delete('/:routineActivityId', requireUser, async (req, res, next) => {
+routineActivitiesRouter.delete('/:routineActivityId', async (req, res, next) => {
   const { routineActivityId } = req.params;
-  const { creatorId } = await getRoutinesByActivity(routineActivityId);
+  const { creatorId } = await getRoutineActivityById(routineActivityId);
   console.log(creatorId);
 
   try {
@@ -56,7 +57,7 @@ routineActivitiesRouter.delete('/:routineActivityId', requireUser, async (req, r
       const routineActivity = await getRoutineActivityById(routineActivityId);
 
       if (routineActivity && req.user.id === routine_activity.creatorId) {
-          await deleteActivityFromRoutine(routineActivityId);
+          await destroyRoutineActivity(routineActivityId);
           res.send('Activity has been deleted from routine!');
       } else {
           next({ message: "You are not authorized to delete an activity from a routine you did not create!"});

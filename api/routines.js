@@ -1,6 +1,7 @@
 const express = require('express');
 // const { destroyRoutine } = require('../db/routines');
 const routinesRouter = express.Router();
+const {getAllRoutines, createRoutine, getRoutineById, updateRoutine, addActivityToRoutine, destroyRoutine} = require('../db')
 
 // GET /api/routines
 // fetch('http://fitnesstrac-kr.herokuapp.com/api/routines', {
@@ -108,14 +109,14 @@ routinesRouter.patch('/:routineId', async(res, req, next) => {
 //     console.log(result);
 //   })
 //   .catch(console.error);
-routinesRouter.delete('/:routineId', requireUser, async (req, res, next) => {
+routinesRouter.delete('/:routineId', async (req, res, next) => {
     const { routineId } = req.params;
 
     try {
         const routine = await getRoutineById(routineId);
 
         if (routine.creatorId === req.user.id) {
-            await deleteRoutine(routineId);
+            await destroyRoutine(routineId);
             console.log('routine has been deleted!');
             res.send('routine has been deleted!')
         } else {
@@ -159,4 +160,4 @@ routinesRouter.post('/', requireUser, async (req, res, next) => {
 });
 
 
-module.exports = router;
+module.exports = routinesRouter;

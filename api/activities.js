@@ -1,5 +1,8 @@
 const express = require('express');
 const activitiesRouter = express.Router();
+// const requireUser = require('./utils');
+const {updateActivity, createActivity, getAllActivities, getPublicRoutinesByActivity} = require('../db')
+// const { getAllActivities, updateActivity, createActivity, getPublicRoutinesByActivity } = require('../db');
 
 // GET /api/activities/:activityId/routines
 // fetch('http://fitnesstrac-kr.herokuapp.com/api/activities/3/routines', {
@@ -48,7 +51,7 @@ activitiesRouter.get('/', async (req, res, next) => {
 //     console.log(result);
 //   })
 //   .catch(console.error);
-activitiesRouter.post('/', requireUser, async (req, res, next) => {
+activitiesRouter.post('/', async (req, res, next) => {
     try {
         const { name, description } = req.body;
         const activityData = { name, description }
@@ -57,13 +60,13 @@ activitiesRouter.post('/', requireUser, async (req, res, next) => {
         if (activity) {
             res.send(activity);
         } else {
-            next({
+            res.send({
                 name: "CreateActivityError",
                 message: "Must be logged in to create activity"
             })
         }
     } catch ({ name, message }) {
-        next({ name, message });
+        res.send({ name, message });
     };
 });
 
@@ -81,7 +84,7 @@ activitiesRouter.post('/', requireUser, async (req, res, next) => {
 //   })
 //   .catch(console.error);
 
-activitiesRouter.patch('/:activityId', requireUser, async (req, res, next) => {
+activitiesRouter.patch('/:activityId', async (req, res, next) => {
     const { activityId } = req.params;
     const { name, description } = req.body;
     const updateFields = {};
@@ -99,7 +102,7 @@ activitiesRouter.patch('/:activityId', requireUser, async (req, res, next) => {
 
         res.send({ activity: updatedActivity });
     } catch ({ name, message }) {
-        next({ name, message });
+        res.send({ name, message });
     }
 });
   

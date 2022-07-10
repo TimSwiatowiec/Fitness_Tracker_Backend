@@ -4,8 +4,9 @@ const usersRouter = express.Router();
 // const { getAllUsers, getUserByUsername, createUser } = require('../db');
 // const { getAllUsers, getUserByUsername, createUser, getAllPublicRoutinesByUser } = require('../db');
 // const { requireUser, requireActiveUser } = require('./utils');
-const jwt = require('jsonwebtoken');
+// const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+
 
 
 // POST /api/users/login
@@ -18,9 +19,8 @@ const bcrypt = require('bcrypt');
 
 const { 
     createUser,
-    getUserById,
-    getUser,
     getUserByUsername,
+    getPublicRoutinesByUser
   } = require('../db');
   
   const jwt = require('jsonwebtoken');
@@ -30,10 +30,10 @@ const {
     console.log(username);
   
     try {
-      const userPublicRoutines = await getAllPublicRoutinesByUser(username);
+      const userPublicRoutines = await getPublicRoutinesByUser(username);
       res.send(userPublicRoutines);
     } catch ({ name, message }) {
-      next({ name, message });
+      res.send({ name, message });
     };
   });
 //   usersRouter.get('/:username/routines', async (req, res, next) => {
@@ -131,6 +131,6 @@ next(error);
   }
 });
 
-  //get userById still needs to be done.
+  
   
   module.exports = usersRouter;
